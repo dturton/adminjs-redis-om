@@ -3,7 +3,7 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-param-reassign */
 import { BaseRecord, BaseResource, Filter, flat } from 'adminjs';
-import { Schema, Entity, Client, EntityValue, WhereField } from 'redis-om';
+import { Schema, Entity, Client, EntityValue } from 'redis-om';
 import { Property } from './Property';
 import { convertFilter } from './utils/converters';
 
@@ -14,10 +14,10 @@ export class Resource extends BaseResource {
 
   private propertiesObject: Record<string, any>;
 
-  constructor(schema: Schema<Entity>, client: Client) {
-    super();
-    this.schema = schema;
-    this.client = client;
+  constructor(args: { schema; client }) {
+    super(args);
+    this.schema = args.schema;
+    this.client = args.client;
     this.propertiesObject = this.prepareProperties();
   }
 
@@ -27,6 +27,13 @@ export class Resource extends BaseResource {
 
   public properties(): Array<Property> {
     return [...Object.values(this.propertiesObject)];
+  }
+
+  async count(filter: Filter): Promise<number> {
+    const parsedFilters = convertFilter(filter);
+    const searchPath = await this.createSearch(parsedFilters);
+
+    return searchPath.count();
   }
 
   public property(path: string): Property | null {
@@ -59,11 +66,34 @@ export class Resource extends BaseResource {
 
     const result = await this.client.fetchRepository(this.schema).fetch(id);
 
-    return new BaseRecord(this.prepareReturnValues(result), this);
+    return new BaseRecord(this.prepareReturnValues(result.toJSON()), this);
   }
 
   public async delete(id: string): Promise<void> {
     await this.client.fetchRepository(this.schema).remove(id);
+  }
+
+  async findMany(ids: string[]) {
+    const idProperty = this.properties().find((property) => property.isId());
+    if (!idProperty) return [];
+
+    const records = await this.client.fetchRepository(this.schema).fetch(ids);
+    return records.map(
+      (result) =>
+        // eslint-disable-next-line implicit-arrow-linebreak
+        new BaseRecord(this.prepareReturnValues(result.toJSON()), this),
+    );
+  }
+
+  private async createSearch(parsedFilters) {
+    const repository = await this.client.fetchRepository(this.schema);
+    await repository.createIndex();
+    const searchPath = repository.search();
+    Object.keys(parsedFilters).forEach((key) => {
+      const value = parsedFilters[key];
+      searchPath.where(key).eq(value);
+    });
+    return searchPath;
   }
 
   async find(
@@ -80,23 +110,18 @@ export class Resource extends BaseResource {
     },
   ): Promise<BaseRecord[]> {
     const parsedFilters = convertFilter(filter);
-    const repository = await this.client.fetchRepository(this.schema);
-    await repository.createIndex();
-    const searchPath = repository.search();
-    Object.keys(parsedFilters).forEach((key) => {
-      const value = parsedFilters[key];
-      searchPath.where(key).eq(value);
-    });
-
+    const searchPath = await this.createSearch(parsedFilters);
     let records: Entity[];
     if (options.limit) {
       const offset = options.offset || 0;
-      records = await searchPath.returnPage(offset, options.limit);
+      records = await searchPath.return.page(offset, options.limit);
     } else {
-      records = await searchPath.returnAll();
+      records = await searchPath.return.all();
     }
     return records.map(
-      (result) => new BaseRecord(this.prepareReturnValues(result), this),
+      (result) =>
+        // eslint-disable-next-line implicit-arrow-linebreak
+        new BaseRecord(this.prepareReturnValues(result.toJSON()), this),
     );
   }
 
@@ -105,7 +130,8 @@ export class Resource extends BaseResource {
     client: Client;
   }): boolean {
     const { model, client } = args;
-    return model instanceof Schema && client instanceof Client;
+    // TODO: check if client is instance of Client
+    return true;
   }
 
   private prepareReturnValues(
@@ -114,8 +140,8 @@ export class Resource extends BaseResource {
     const preparedValues: Record<string, any> = {};
 
     for (const property of this.properties()) {
-      const param = flat.get(params, property.path());
-      const key = property.path();
+      const param = flat.get(params, property.name());
+      const key = property.name();
 
       preparedValues[key] = param;
     }
@@ -132,7 +158,7 @@ export class Resource extends BaseResource {
         this.schema.definition[field],
         index,
       );
-      memo[property.path()] = property;
+      memo[property.name()] = property;
 
       return memo;
     }, {});
@@ -144,7 +170,7 @@ export class Resource extends BaseResource {
     const preparedParams: Record<string, EntityValue> = {};
 
     for (const property of this.properties()) {
-      const key = property.path();
+      const key = property.name();
 
       preparedParams[key] = params[key];
     }

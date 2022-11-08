@@ -18,7 +18,7 @@ export class Database extends BaseDatabase {
   }
 
   public resources(): Array<Resource> {
-    const resource = new Resource(this.schema, this.client);
+    const resource = new Resource({ schema: this.schema, client: this.client });
     return [resource];
   }
 }

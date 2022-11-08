@@ -1,28 +1,27 @@
 {
   "name": "adminjs-redis-om",
-  "version": "0.1",
-  "description": "Redis om adapter for AdminJS",
-  "keywords": [
-    "redis-om",
-    "provider",
-    "adminjs",
-    "orm admin",
-    "admin panel"
-  ],
+  "version": "0.0.1",
+  "description": "Redis OM adapter for AdminJS",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "url": "https://github.com/dturton/adminjs-redis-om.git"
+  },
   "scripts": {
     "clean": "rm -fR lib",
-    "build": "tsc",
     "dev": "yarn clean && tsc -w",
     "test": "dotenv -e .env -- jest --config ./jest.json --runInBand --forceExit --detectOpenHandles --verbose",
     "ts-node": "ts-node",
     "lint": "eslint './src/**/*.{ts,js}' './spec/**/*.{ts,js}' './example-app/**/*.{ts,js}' --ignore-pattern 'build' --ignore-pattern 'yarn.lock'",
     "check:all": "yarn lint && yarn test && yarn build",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "build": "tsc"
   },
-  "author": "David Turton",
-  "license": "MIT",
   "devDependencies": {
     "@semantic-release/git": "^9.0.0",
     "@types/jest": "^27.0.2",
@@ -49,5 +48,7 @@
   "dependencies": {
     "adminjs": "^6.6.1",
     "redis-om": "^0.3.6"
-  }
+  },
+  "author": "David Turton <dturton@etrivo.com> (httpw://www.etrivo.com)",
+  "license": "MIT"
 }

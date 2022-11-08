@@ -24,7 +24,7 @@ describe('Resource', () => {
   });
 
   beforeEach(async () => {
-    resource = new Resource(schema, client);
+    resource = new Resource({ schema, client });
   });
 
   describe('#databaseType', () => {
@@ -103,7 +103,7 @@ describe('Resource', () => {
       filter.filters = {
         status: {
           path: 'status',
-          value: 'status-filter1',
+          value: 'status-filter',
           property: resource.property('status') as BaseProperty,
         },
       };

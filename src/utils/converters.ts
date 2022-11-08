@@ -12,7 +12,6 @@ export const convertParam = (
 ): string | boolean | number | Record<string, any> | null | undefined => {
   const type = property.type();
 
-  if (type === 'mixed') return value;
   if (type === 'number') {
     return safeParseNumber(value);
   }
