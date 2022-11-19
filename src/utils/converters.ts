@@ -3,7 +3,7 @@ import { Filter } from 'adminjs';
 import { Entity, Schema } from 'redis-om';
 
 import { Property } from '../Property';
-import { safeParseJSON, safeParseNumber } from './helpers';
+import { safeParseNumber } from './helpers';
 
 export const convertParam = (
   property: Property,

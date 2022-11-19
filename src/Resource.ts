@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable class-methods-use-this */
@@ -6,6 +7,11 @@ import { BaseRecord, BaseResource, Filter, flat } from 'adminjs';
 import { Schema, Entity, Client, EntityValue } from 'redis-om';
 import { Property } from './Property';
 import { convertFilter } from './utils/converters';
+
+enum direction {
+  asc = 'ASC',
+  desc = 'DESC',
+}
 
 export class Resource extends BaseResource {
   schema: Schema<Entity>;
@@ -111,12 +117,18 @@ export class Resource extends BaseResource {
   ): Promise<BaseRecord[]> {
     const parsedFilters = convertFilter(filter);
     const searchPath = await this.createSearch(parsedFilters);
+    const searchPathSorted = options?.sort?.sortBy
+      ? searchPath.sortBy(
+          options.sort.sortBy,
+          direction[options.sort.direction as 'asc' | 'desc'],
+        )
+      : searchPath;
     let records: Entity[];
     if (options.limit) {
       const offset = options.offset || 0;
-      records = await searchPath.return.page(offset, options.limit);
+      records = await searchPathSorted.return.page(offset, options.limit);
     } else {
-      records = await searchPath.return.all();
+      records = await searchPathSorted.return.all();
     }
     return records.map(
       (result) =>
