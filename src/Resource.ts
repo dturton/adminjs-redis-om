@@ -141,9 +141,8 @@ export class Resource extends BaseResource {
     model: Schema<Entity>;
     client: Client;
   }): boolean {
-    const { model, client } = args;
-    // TODO: check if client is instance of Client
-    return true;
+    const { model } = args;
+    return model instanceof Schema;
   }
 
   private prepareReturnValues(
