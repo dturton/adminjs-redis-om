@@ -1,6 +1,6 @@
 {
   "name": "adminjs-redis-om",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Redis OM adapter for AdminJS",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
